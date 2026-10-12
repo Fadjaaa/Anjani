@@ -211,44 +211,7 @@ const PHOTOS = [
 ];
 
 const CENTER_PHOTO = "A0.png";   // foto di tengah piringan
-function buildToneDataUrl(){
-  const sampleRate = 22050;
-  const duration = 8;
-  const total = sampleRate * duration;
-  const freq = [220, 277.18, 329.63, 392, 440, 392, 329.63, 277.18];
-  let bytes = new Uint8Array(44 + total * 2);
-  const view = new DataView(bytes.buffer);
-
-  const writeString = (offset, str) => {
-    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
-  };
-
-  writeString(0, 'RIFF');
-  view.setUint32(4, 36 + total * 2, true);
-  writeString(8, 'WAVE');
-  writeString(12, 'fmt ');
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, 1, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true);
-  view.setUint16(32, 2, true);
-  view.setUint16(34, 16, true);
-  writeString(36, 'data');
-  view.setUint32(40, total * 2, true);
-
-  for (let i = 0; i < total; i++) {
-    const t = i / sampleRate;
-    const tone = freq[Math.floor((i / 2205) % freq.length)];
-    const wave = Math.sin(2 * Math.PI * tone * t) * 0.45 + Math.sin(2 * Math.PI * (tone / 2) * t) * 0.2;
-    const sample = Math.max(-1, Math.min(1, wave));
-    view.setInt16(44 + i * 2, sample * 32767, true);
-  }
-
-  const binary = Array.from(bytes).map(b => String.fromCharCode(b)).join('');
-  return 'data:audio/wav;base64,' + btoa(binary);
-}
-const MUSIC_SRC    = buildToneDataUrl();
+const MUSIC_SRC    = "A.mp3";
 const SONG_TITLE   = "Siapkah Kau'Tuk Jatuh Cinta Lagi";
 const SONG_ARTIST  = "Hivi!";
 const AUTOPLAY_ON_ENTER = false;            // true = musik langsung putar saat klik "Of course"
@@ -278,7 +241,7 @@ function toast(msg){
    ===================================================================== */
 let vinylOpen = false;
 const audio = new Audio();
-audio.loop = true; audio.preload = 'metadata';
+audio.loop = false; audio.preload = 'metadata';
 if (MUSIC_SRC) audio.src = MUSIC_SRC;
 audio.volume = 0.8;
 
@@ -294,16 +257,13 @@ audio.volume = 0.8;
 function fmt(s){ if(!isFinite(s)) return '0:00'; const m=Math.floor(s/60); return m+':'+String(Math.floor(s%60)).padStart(2,'0'); }
 function playMusic(){
   if(!MUSIC_SRC){ toast('Musik belum ditambahkan — isi MUSIC_SRC di index.html'); return; }
-  if (!audio.src || audio.src !== MUSIC_SRC) {
-    audio.src = MUSIC_SRC;
-  }
   audio.play().catch(()=>toast('File musik tidak bisa diputar — cek nama & lokasi file-nya'));
 }
 $('#playBtn').addEventListener('click', () => audio.paused ? playMusic() : audio.pause());
 audio.addEventListener('play',  () => document.body.classList.add('playing'));
 audio.addEventListener('pause', () => document.body.classList.remove('playing'));
 audio.addEventListener('error', () => {
-  if (MUSIC_SRC && audio.error && audio.error.code !== 1) toast('File musik tidak ditemukan: '+MUSIC_SRC);
+  if (MUSIC_SRC && audio.error && audio.error.code !== 1) toast('File musik tidak bisa dimuat: '+MUSIC_SRC);
 });
 audio.addEventListener('loadedmetadata', () => $('#tDur').textContent = fmt(audio.duration));
 audio.addEventListener('timeupdate', () => {
